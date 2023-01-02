@@ -64,9 +64,7 @@ class ProductsController extends Controller
         return Products::destroy($id);
     }
 
-    /**
-     * Remove the specified resource from storage.
-     */
+
     public function search($name)
     {
         return Products::where('name', 'like', '%' . $name . '%')->get();
