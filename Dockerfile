@@ -20,7 +20,10 @@
 # CMD ["/start.sh"]
 
 # Use an official PHP runtime as a parent image
-FROM php:7.4-apache
+FROM php:8.2.8-apache
+
+# Enable Apache modules and set up additional configurations
+RUN a2enmod rewrite
 
 # Set the working directory in the container
 WORKDIR /var/www/html
@@ -41,6 +44,9 @@ RUN apt-get update && \
 # Install PHP extensions
 RUN docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd
 
+# Install additional PHP extensions for SQLite support
+RUN docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd pdo_sqlite
+
 # Install Composer
 RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
 
@@ -48,10 +54,16 @@ RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local
 COPY composer.json composer.lock ./
 
 # Install application dependencies
-RUN composer install --no-dev --optimize-autoloader
+# RUN composer install --no-dev --optimize-autoloader
+
+# Install dependencies
+RUN composer install --no-interaction --optimize-autoloader
 
 # Copy the application files to the container
 COPY . .
+
+# Set permissions for storage and bootstrap folders
+RUN chown -R www-data:www-data storage bootstrap
 
 # Set up Laravel environment
 RUN cp .env.example .env && \
@@ -63,7 +75,7 @@ RUN cp .env.example .env && \
 RUN npm install
 
 # Build frontend assets (adjust the command according to your Laravel project)
-RUN npm run production
+RUN npm run build
 
 # Expose port 80 and start Apache
 EXPOSE 80
